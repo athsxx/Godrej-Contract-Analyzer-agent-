@@ -32,8 +32,12 @@ test_results/
 !.env.example
 *.pem
 
-# Live counterparty / client contracts (not source)
-data/*.pdf
-data/Safran HE- Contrat _ Long Terme _ Godrej_V1 06 feb 2026.docx
-/Appendix_*.docx
+# Contract documents and appendix — keep local, do not commit
+*.pdf
+*.xlsx
+Appendix*.docx
+/test_supply_agreement_contract.docx
+data/*.docx
+docs/test_data/*.docx
+docs/test_data/*.txt
 /Mitigation Checklist*.xlsx

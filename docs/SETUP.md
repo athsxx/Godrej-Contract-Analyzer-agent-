@@ -80,5 +80,4 @@ Document contents:
 
 ### Test input
 
-Use this concrete test file for quick validation:
-- `docs/test_data/sample_supply_contract_for_redline_test.txt`
+Upload a contract from your local machine. Sample and appendix documents are not stored in this repository.

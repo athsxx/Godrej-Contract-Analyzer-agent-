@@ -31,7 +31,7 @@ python3 manage.py migrate
 python3 manage.py runserver 127.0.0.1:8501
 ```
 
-Open [http://127.0.0.1:8501](http://127.0.0.1:8501) → **Aerospace → Contract Analyzer**. Upload a contract, then run analysis. A sample fixture is `docs/test_data/sample_supply_contract_for_redline_test.txt`.
+Open [http://127.0.0.1:8501](http://127.0.0.1:8501) → **Aerospace → Contract Analyzer**. Upload a contract from your local machine, then run analysis.
 
 Full local setup, RAG flags, and Bedrock overrides: [docs/SETUP.md](docs/SETUP.md).
 
@@ -63,9 +63,8 @@ source scripts/env_day_to_day.sh
 | `geg_guru/` | Django project settings, URLs, WSGI, Celery app |
 | `docs/` | Workflow, setup, POC scope, knowledge source |
 | `docs/knowledge/` | Canonical GB Legal POC positions (DOCX) |
-| `docs/test_data/` | Sample contract text for redline checks |
 | `scripts/` | Env presets, production stack, PEFT helpers, tests |
-| `data/` | Sample fixtures + optional PEFT JSONL (live contracts are not committed) |
+| `data/` | Optional PEFT JSONL (contracts and appendix files are not committed) |
 | `manage.py` | Django entrypoint |
 | `requirements.txt` | Python dependencies |
 
@@ -116,7 +115,7 @@ Day-to-day env: `source scripts/env_day_to_day.sh`. Model wiring: [docs/HOW_IT_I
 ## What is not in this repo
 
 - `.venv`, `db.sqlite3`, Redis dumps, session uploads under `media/`
-- Live counterparty contracts (signed PDFs/DOCX under `data/`)
+- Contract files, appendix documents, and sample DOCX/PDF/XLSX (keep them local)
 - Environment secrets (`.env`, AWS keys, Azure client secret)
 
 Keep those local. Point `POC_KNOWLEDGE_PATH` at the knowledge DOCX already in `docs/knowledge/`.
