@@ -52,9 +52,11 @@ The agent uses the POC clause document for context. Install RAG deps:
 pip install sentence-transformers numpy
 ```
 
-On first question, the app loads `docs/knowledge/Contract_Positions_POC_GB_Legal_2026-02-19.json` (default) for the Aerospace 10-clause knowledge contract. Optional env:
+Keep the GB Legal POC positions file on your machine (not in git). The app default is the DOCX under `docs/knowledge/` if present, otherwise the JSON fallback. Set `POC_KNOWLEDGE_PATH` if the file lives elsewhere.
 
-- `POC_KNOWLEDGE_PATH` – path to the POC clause document
+Optional env:
+
+- `POC_KNOWLEDGE_PATH` – path to the local POC clause document
 - `LOCAL_EMBED_MODEL` – e.g. `all-MiniLM-L6-v2` (sentence-transformers)
 - `RAG_TOP_K` – number of chunks to retrieve (default: 8)
 - `ENABLE_RAG` – set `1` to use embedding retrieval from the POC knowledge JSON and uploaded files; default is `1` (on)

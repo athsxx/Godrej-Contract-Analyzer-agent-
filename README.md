@@ -61,8 +61,8 @@ source scripts/env_day_to_day.sh
 | `agents/sample_agent/` | Clause pipeline, RAG, redline, chat, orchestrators |
 | `guru/` | Django views, templates, static JS, Celery tasks |
 | `geg_guru/` | Django project settings, URLs, WSGI, Celery app |
-| `docs/` | Workflow, setup, POC scope, knowledge source |
-| `docs/knowledge/` | Canonical GB Legal POC positions (DOCX) |
+| `docs/` | Workflow, setup, POC scope |
+| `docs/knowledge/` | Knowledge mapping notes (GB Legal DOCX is local, not committed) |
 | `scripts/` | Env presets, production stack, PEFT helpers, tests |
 | `data/` | Optional PEFT JSONL (contracts and appendix files are not committed) |
 | `manage.py` | Django entrypoint |
@@ -115,7 +115,7 @@ Day-to-day env: `source scripts/env_day_to_day.sh`. Model wiring: [docs/HOW_IT_I
 ## What is not in this repo
 
 - `.venv`, `db.sqlite3`, Redis dumps, session uploads under `media/`
-- Contract files, appendix documents, and sample DOCX/PDF/XLSX (keep them local)
+- Contract files, appendix documents, GB Legal knowledge DOCX, and sample DOCX/PDF/XLSX (keep them local)
 - Environment secrets (`.env`, AWS keys, Azure client secret)
 
-Keep those local. Point `POC_KNOWLEDGE_PATH` at the knowledge DOCX already in `docs/knowledge/`.
+Keep those local. Point `POC_KNOWLEDGE_PATH` at your local GB Legal knowledge DOCX (default path `docs/knowledge/`).

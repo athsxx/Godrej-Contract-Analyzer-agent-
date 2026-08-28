@@ -40,4 +40,5 @@ Appendix*.docx
 data/*.docx
 docs/test_data/*.docx
 docs/test_data/*.txt
+docs/knowledge/*.docx
 /Mitigation Checklist*.xlsx
