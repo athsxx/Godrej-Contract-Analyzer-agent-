@@ -1,0 +1,36 @@
+MASTER SUPPLY AGREEMENT (TEST DRAFT)
+
+This Master Supply Agreement is entered into between Aero Components India Pvt. Ltd. ("Supplier")
+and Flight Systems Global Ltd. ("Buyer").
+
+1) Limitation of Liability
+Supplier liability shall not exceed 200% of contract value. Consequential damages may be claimed by either party.
+
+2) Governing Law and Jurisdiction
+This Agreement is governed by the laws of New York, and parties submit to courts in New York.
+
+3) Dispute Resolution
+Any dispute will be resolved by courts, and either party may seek litigation as first remedy.
+
+4) Price
+Prices are subject to escalation at Supplier discretion based on market conditions.
+
+5) Force Majeure
+Force majeure includes shortage of labor, economic hardship, and cash-flow disruptions. Payment obligations may be suspended.
+
+6) Liquidated Damages
+Liquidated damages are 1.5% per week of total order value with no overall cap.
+
+7) Orders Extending Beyond Termination
+All existing orders continue for 24 months after termination at pre-termination prices.
+
+8) Quantity Protection
+Forecasts are non-binding, and Buyer accepts all inventory built against any forecast variance.
+
+9) Inventory Requirements
+Buyer shall maintain minimum 16 weeks of inventory at all times.
+
+10) Change Orders
+Supplier may implement engineering changes immediately and pricing impacts will be discussed later.
+
+END OF TEST DRAFT

@@ -1,0 +1,132 @@
+*:not(.pie-chart *) {
+  font-family: GB-BodyCopy,sans-serif;
+  font-size: 14px;
+}
+::placeholder {
+  color: #a4a5aa;
+}
+
+@font-face {
+  font-family: 'GB-BodyCopy';
+  src: url('./assets/fonts/G&B-BodyCopy.woff2') format('woff2'),
+    url("./assets/fonts/G&B-BodyCopy.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GB-BodyCopyItalic';
+  src: url('./assets/fonts/G&B-BodyCopyItalic.woff2') format('woff2'),
+    url("./assets/fonts/G&B-BodyCopyItalic.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GB-BodyCopyHighlight';
+  src: url('./assets/fonts/G&B-BodyCopyHighlight.woff2') format('woff2'),
+    url("./assets/fonts/G&B-BodyCopyHighlight.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GB-BodyCopyHighlightItalic';
+  src: url('./assets/fonts/G&B-BodyCopyHighlightItalic.woff2') format('woff2'),
+    url("./assets/fonts/G&B-BodyCopyHighlightItalic.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GB-Headline';
+  src: url('./assets/fonts/G&B-Headline.woff2') format('woff2'),
+    url("./assets/fonts/G&B-Headline.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GB-HeadlineItalic';
+  src: url('./assets/fonts/G&B-HeadlineItalic.woff2') format('woff2'),
+    url("./assets/fonts/G&B-HeadlineItalic.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GB-Light';
+  src: url('./assets/fonts/G&B-Light.woff2') format('woff2'),
+    url("./assets/fonts/G&B-Light.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.chat-table-container {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-table-scroll {
+  max-width: 100%;
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  background-color: #ffffff;
+}
+
+.chat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  color: #333333;
+}
+
+.chat-table th,
+.chat-table td {
+  padding: 10px 14px;
+  border: 1px solid #d9d9d9;
+  text-align: left;
+  vertical-align: top;
+}
+
+.chat-table thead th {
+  background-color: #f7f7f7;
+  font-weight: 600;
+}
+
+.chat-table tbody tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.chat-table-download {
+  align-self: flex-start;
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid #d0d0d0;
+  background-color: #ffffff;
+  color: #303030;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.chat-table-download:hover {
+  background-color: #f0f0f0;
+  border-color: #c0c0c0;
+}
+
+.chat-table-download:focus-visible {
+  outline: 2px solid #8c52ff;
+  outline-offset: 2px;
+}

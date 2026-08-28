@@ -1,0 +1,24 @@
+{% extends "guru/layouts/sidebar_layout.html" %}
+{% load static %}
+
+{% block body_class %}{{ block.super }} page-home{% endblock %}
+
+{% block nav_left %}Home • {{ current_time }}{% endblock %}
+
+{% block main_content %}
+<div class="main-container" style="max-width: 720px; padding: 24px 0;">
+  <div class="card" style="margin-bottom: 24px;">
+    <h2 style="margin: 0 0 12px; font-size: 28px; font-weight: 600; color: #111827;">GEG Generative AI Platform</h2>
+    <p style="margin: 0; color: #475467; line-height: 1.6;">Welcome. Use the sidebar to open a workspace.</p>
+  </div>
+  <div class="card" style="margin-bottom: 24px;">
+    <h3 style="margin: 0 0 12px; font-size: 1.25rem; font-weight: 600; color: #374151;">Aerospace</h3>
+    <p style="margin: 0 0 16px; color: #475467; line-height: 1.6;">Supply contract review: 10 POC clauses, GB Legal positions, risks, mitigation, and counterfactuals.</p>
+    <a href="{% url 'workspace_aerospace_contract_analyzer' %}" class="btn-primary" style="display: inline-flex; align-items: center; padding: 10px 18px; background: #810055; color: #fff; border-radius: 10px; font-weight: 600; text-decoration: none;">Open Contract Analyzer</a>
+  </div>
+  <div class="card">
+    <h3 style="margin: 0 0 12px; font-size: 1.25rem; font-weight: 600; color: #374151;">Other workspaces</h3>
+    <p style="margin: 0; color: #6B7280; font-size: 0.95rem;">PED, BSI, Interio, Digital, SSD — use the sidebar to navigate when those workspaces are added.</p>
+  </div>
+</div>
+{% endblock %}

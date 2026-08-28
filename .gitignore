@@ -1,0 +1,39 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Django / local runtime
+db.sqlite3
+dump.rdb
+media/
+staticfiles/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp / local test artifacts
+.tmp_she_xlsx_media/
+test_results/
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+
+# Live counterparty / client contracts (not source)
+data/*.pdf
+data/Safran HE- Contrat _ Long Terme _ Godrej_V1 06 feb 2026.docx
+/Appendix_*.docx
+/Mitigation Checklist*.xlsx

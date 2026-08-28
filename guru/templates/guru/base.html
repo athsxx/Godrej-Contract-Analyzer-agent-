@@ -1,0 +1,16 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}GEG Cutout{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'guru/css/App.css' %}">
+  <link rel="stylesheet" href="{% static 'guru/css/index.css' %}">
+  <link rel="stylesheet" href="{% static 'guru/css/base.css' %}">
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  {% block content %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,29 @@
+django>=5.0,<6.0
+whitenoise>=6.6,<7.0
+markdown>=3.5,<4.0
+bleach>=6.1,<7.0
+celery>=5.3
+redis>=5.0
+django-allauth>=0.60.0
+boto3>=1.34.0
+botocore>=1.34.0
+PyMuPDF>=1.24.0   # optional, for PDF image fallback
+# textract omitted: 1.6.4/1.6.5 have invalid metadata (extract-msg<=0.29.*). Install manually with pip<24.1 if needed for .doc extraction.
+sentence-transformers>=2.2.0
+numpy>=1.24.0
+python-docx>=1.1.2
+docx2txt>=0.8
+pdf2docx>=0.5.8
+spacy>=3.8.0
+langgraph
+langgraph-checkpoint
+
+# PEFT/LoRA training
+peft>=0.10.0
+transformers>=4.40.0
+datasets>=2.18.0
+accelerate>=0.28.0
+bitsandbytes>=0.43.0   # optional, for 4-bit quantization (GPU only)
+
+# Local test runs (pytest was missing from venv — keep in sync)
+pytest>=8.0.0

@@ -1,0 +1,466 @@
+{% extends "guru/layouts/sidebar_layout.html" %}
+{% load static %}
+{% load contract_markdown %}
+
+{% block body_class %}{{ block.super }} workspace-aerospace workspace-ped-chat{% endblock %}
+
+{% block nav_left %}{{ nav_left_label|default:"Aerospace • Contract Analyzer" }} • {{ current_time }}{% endblock %}
+
+{% block main_content %}
+<style>
+  .main-container,.main-content{width:100%;max-width:none;padding-top:0 !important;margin-top:0 !important;}
+  .workspace-root{position:relative;display:flex;flex-direction:column;gap:18px;min-height:70vh;}
+  .workspace-root.no-access .workspace-content{filter:blur(4px);pointer-events:none;}
+  .workspace-root .access-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.92);backdrop-filter:blur(2px);font-size:1.1rem;font-weight:600;color:#6d0870;text-align:center;padding:24px;z-index:10;}
+
+  .card{background:#fff;border:1px solid #E5E7EB;border-radius:16px;box-shadow:0 1px 2px rgba(16,24,40,.04);padding:20px;display:flex;flex-direction:column;gap:12px;}
+  .card h2{margin:0;font-size:28px;font-weight:600;color:#111827;}
+  .card p{margin:0;color:#475467;}
+
+  .chat-card{flex:1;display:flex;padding:20px;}
+  .chat-shell{display:flex;flex-direction:column;position:relative;width:100%;height:min(72vh, 640px);border:1px solid #E5E7EB;border-radius:16px;overflow:hidden;background:#F3F4F6;}
+  .request-progress{display:none;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #E5E7EB;background:linear-gradient(180deg,#F8FAFC 0%,#F1F5F9 100%);}
+  .request-progress__track{position:relative;flex:1;height:8px;border-radius:999px;background:#E2E8F0;overflow:hidden;}
+  .request-progress__bar{position:absolute;top:0;bottom:0;width:42%;border-radius:999px;background:linear-gradient(90deg,#2563EB,#10B981);animation:requestSlide 1.1s infinite ease-in-out;}
+  .request-progress__label{font-size:.82rem;color:#334155;white-space:nowrap;}
+  .chat-feed{flex:1;display:flex;flex-direction:column;gap:12px;padding:20px;overflow-y:auto;}
+  .chat-bubble{padding:12px 14px;border-radius:12px;font-size:.95rem;line-height:1.55;max-width:90%;white-space:pre-wrap;word-break:break-word;box-shadow:none;border:1px solid transparent;background:#fff;color:#1F2937;}
+  .chat-bubble.assistant{align-self:flex-start;background:#fff;border-color:#E5E7EB;}
+  .chat-bubble.user{align-self:flex-end;background:#111827;color:#fff;border-color:#111827;}
+  .chat-entry{display:flex;flex-direction:column;gap:6px;}
+  .chat-action-bar{display:flex;gap:8px;margin-left:6px;}
+  .chat-action-bar .copy-btn{border:1px solid #E5E7EB;background:#fff;padding:4px 8px;border-radius:8px;font-size:.85rem;cursor:pointer;}
+  .chat-action-bar .copy-btn:hover{background:#F3F4F6;}
+  .counterfactuals-output{margin-top:12px;padding:12px 14px;border-radius:12px;background:#F0FDF4;border:1px solid #BBF7D0;font-size:.9rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;}
+  .counterfactuals-output__title{margin:0 0 8px 0;font-weight:600;color:#166534;}
+  .counterfactual-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #BBF7D0;border-radius:10px;overflow:hidden;}
+  .counterfactual-table th,.counterfactual-table td{padding:8px 10px;border-bottom:1px solid #DCFCE7;text-align:left;vertical-align:top;font-size:.82rem;line-height:1.45;color:#14532D;}
+  .counterfactual-table th{background:#ECFDF3;font-weight:600;color:#166534;}
+  .counterfactual-table tr:last-child td{border-bottom:none;}
+  .checklist-output{margin-top:12px;padding:12px 14px;border-radius:12px;background:#F8FAFC;border:1px solid #E2E8F0;font-size:.86rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;}
+  .checklist-output__title{margin:0 0 8px 0;font-weight:600;color:#0F172A;}
+  .checklist-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;}
+  .checklist-table th,.checklist-table td{padding:8px 10px;border-bottom:1px solid #E5E7EB;text-align:left;vertical-align:top;font-size:.82rem;line-height:1.45;}
+  .checklist-table th{background:#F8FAFC;font-weight:600;color:#0F172A;}
+  .checklist-table tr:last-child td{border-bottom:none;}
+  .checklist-empty{font-size:.84rem;color:#475467;}
+  .analysis-table-wrap{margin-top:12px;overflow:auto;border:1px solid #E5E7EB;border-radius:12px;background:#fff;}
+  .analysis-table{width:100%;border-collapse:collapse;min-width:980px;font-size:.82rem;line-height:1.35;color:#111827;}
+  .analysis-table th,.analysis-table td{border-bottom:1px solid #E5E7EB;padding:8px 10px;vertical-align:top;text-align:left;}
+  .analysis-table th{position:sticky;top:0;background:#F9FAFB;font-weight:600;z-index:1;}
+  .risk-dot{display:inline-block;width:10px;height:10px;border-radius:50%;border:1px solid transparent;vertical-align:middle;}
+  .risk-dot.green{background:#12B76A;border-color:#ABEFC6;}
+  .risk-dot.amber{background:#F79009;border-color:#FEDF89;}
+  .risk-dot.red{background:#F04438;border-color:#FECDCA;}
+
+  .chat-footer{display:flex;flex-direction:column;gap:10px;background:#fff;border-top:1px solid #E5E7EB;}
+  .files-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 20px 0;min-height:32px;}
+  .uploaded-chip{display:inline-flex;align-items:center;gap:6px;background:#EEF2FF;border:1px solid #C7D2FE;border-radius:999px;padding:6px 12px;font-size:.85rem;color:#1D4ED8;}
+  .uploaded-chip form{display:inline-flex;margin:0;padding:0;}
+  .uploaded-chip button{border:none;background:transparent;color:#1E3A8A;font-size:14px;cursor:pointer;padding:0;margin:0;line-height:1;}
+  .files-empty{font-size:.85rem;color:#6B7280;}
+  .input-bar{display:flex;align-items:flex-end;gap:12px;padding:12px 20px 20px;border-top:1px solid #E5E7EB;background:#fff;}
+  .chat-loading{margin-left:auto;display:none;align-items:center;gap:6px;font-size:.85rem;color:#4B5563;}
+  .chat-loading__dot{width:6px;height:6px;border-radius:50%;background:#1D4ED8;animation:chatLoading 1s infinite ease-in-out;}
+  .upload-form{position:relative;display:inline-flex;flex:0 0 auto;}
+  .upload-form label{display:inline-flex;align-items:center;justify-content:center;height:46px;border-radius:12px;border:1px solid #CBD5E1;background:#fff;color:#111827;cursor:pointer;padding:0 12px;font-size:.86rem;gap:6px;}
+  .upload-form.contract-upload label{border-color:#065F46;color:#065F46;background:#ECFDF3;}
+  .upload-form.supporting-upload label{border-color:#1D4ED8;color:#1D4ED8;background:#EEF2FF;}
+  .upload-input{position:absolute;top:0;left:0;width:100%;height:46px;opacity:0;cursor:pointer;}
+  .status-error{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:10px;padding:10px 12px;font-size:.9rem;}
+  .status-warning{background:#FFFBEB;border:1px solid #FDE68A;color:#7C2D12;border-radius:10px;padding:10px 12px;font-size:.9rem;}
+  .status-success{background:#ECFDF3;border:1px solid #ABEFC6;color:#067647;border-radius:10px;padding:10px 12px;font-size:.9rem;}
+  .export-form{display:inline-flex;flex:0 0 auto;}
+  .table-export-row{display:flex;justify-content:flex-end;gap:8px;padding:10px 12px;border-top:1px solid #E5E7EB;background:#fff;}
+  .table-export-btn{height:36px;border-radius:10px;border:1px solid #1D4ED8;background:#2563EB;color:#fff;padding:0 12px;font-size:.85rem;cursor:pointer;}
+  .table-export-btn[disabled],.export-btn[disabled]{opacity:.45;cursor:not-allowed;}
+  .export-btn{height:46px;border-radius:12px;border:1px solid #065F46;background:#10B981;color:#fff;padding:0 14px;font-size:.9rem;cursor:pointer;}
+  .export-btn:hover{background:#059669;}
+  .jump-to-latest{position:absolute;bottom:12px;right:16px;display:none;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;border:1px solid #CBD5E1;background:#fff;color:#1F2937;font-size:.85rem;cursor:pointer;}
+  .jump-to-latest:hover{background:#F9FAFB;}
+  .exec-read{margin-top:12px;padding:12px 14px;border-radius:12px;background:#FFFBEB;border:1px solid #FDE68A;font-size:.88rem;line-height:1.5;color:#422006;}
+  .exec-read__title{margin:0 0 8px;font-weight:600;}
+  .exec-read__crux{margin:0 0 10px;}
+  .exec-read-item{margin:10px 0;padding:10px;border-radius:10px;background:#fff;border:1px solid #FDE68A;}
+  .exec-read-item h4{margin:0 0 6px;font-size:.9rem;color:#111;}
+  .exec-read-item dl{margin:0;display:grid;gap:4px;font-size:.84rem;}
+  .exec-read-item dt{font-weight:600;color:#713F12;}
+  .risk-md-rendered{font-size:.86rem;line-height:1.5;color:#111827;}
+  .risk-md-rendered table{width:100%;border-collapse:collapse;margin:8px 0;background:#fff;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;}
+  .risk-md-rendered th,.risk-md-rendered td{border-bottom:1px solid #E5E7EB;padding:8px 10px;text-align:left;vertical-align:top;}
+  .risk-md-rendered th{background:#F9FAFB;font-weight:600;font-size:.82rem;}
+  .risk-md-rendered tr:last-child td{border-bottom:none;}
+  .risk-md-rendered h2,.risk-md-rendered h3{margin:10px 0 6px;font-size:.95rem;}
+  .risk-md-rendered code,.risk-md-rendered pre{font-size:.82rem;}
+  .risk-md-fallback{font-size:.84rem;}
+  .legal-feedback-card{margin-top:8px;}
+  .legal-feedback-list{font-size:.84rem;color:#444;max-height:160px;overflow-y:auto;border:1px solid #E5E7EB;border-radius:10px;padding:8px;background:#FAFAFA;}
+  .legal-feedback-list li{margin:4px 0;}
+</style>
+
+<div class="main-container">
+  <div class="main-content">
+    <div class="workspace-root{% if access_denied %} no-access{% endif %}">
+      {% if access_denied %}
+        <div class="access-overlay">{{ access_denied_message }}</div>
+      {% endif %}
+
+      <div class="workspace-content" style="display:flex;flex-direction:column;gap:16px;flex:1;">
+        <div class="card intro-card">
+          <h2>{{ hero_title|default:"Aerospace Contract Analyzer" }}</h2>
+          <p>{{ hero_subtitle|default:"Upload supply contract documents and ask about the 10 POC clauses. Answers are grounded in GB Legal positions; counterfactuals appear in a separate block below." }}</p>
+        </div>
+
+        <div id="statusError" class="status-error" role="alert" {% if not error %}style="display:none;"{% endif %}>{{ error }}</div>
+        <div id="statusWarnings" class="status-warning" aria-live="polite" {% if not warnings %}style="display:none;"{% endif %}>
+          <strong>Upload notes:</strong>
+          <ul id="statusWarningsList" style="margin:6px 0 0 18px;padding:0;">{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+        </div>
+        {% if docx_export %}
+          <div class="status-success" role="status">
+            Reviewed DOCX generated: <strong>{{ docx_export.filename }}</strong><br/>
+            Download started in browser.
+          </div>
+        {% endif %}
+        {% if csv_export %}
+          <div class="status-success" role="status">
+            Clause CSV generated: <strong>{{ csv_export.filename }}</strong><br/>
+            Download started in browser.
+          </div>
+        {% endif %}
+
+        {% if has_clause_analysis and enable_executive_read %}
+        <div class="card legal-feedback-card">
+          <h2 style="margin:0 0 8px;font-size:1.1rem;">Legal / executive feedback</h2>
+          <p style="margin:0 0 10px;color:#475467;font-size:.9rem;">Notes are stored with this browser session for audit and future batch training workflows (not applied as live model updates).</p>
+          {% if executive_feedback_recent %}
+            <ol class="legal-feedback-list" style="margin:0 0 12px;padding-left:18px;">
+              {% for fb in executive_feedback_recent %}
+                <li><span style="color:#64748B;">{{ fb.created_at|date:"M j, Y H:i" }} —</span> {{ fb.notes|truncatewords:80 }}</li>
+              {% endfor %}
+            </ol>
+          {% endif %}
+          <form method="post" action="{% url 'workspace_aerospace_contract_analyzer' %}">{% csrf_token %}
+            <input type="hidden" name="action" value="save_executive_feedback" />
+            <label for="executive_feedback_notes" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">Feedback notes</label>
+            <textarea id="executive_feedback_notes" name="executive_feedback_notes" rows="3" style="width:100%;border:1px solid #E5E7EB;border-radius:10px;padding:10px;font-size:.9rem;" placeholder="Risk call, clearance conditions, or negotiation posture…"></textarea>
+            <button type="submit" class="table-export-btn" style="margin-top:8px;">Save feedback</button>
+          </form>
+        </div>
+        {% endif %}
+
+        <div class="card chat-card">
+          <div class="chat-shell" id="chatDropHost">
+            <div id="requestProgress" class="request-progress" aria-live="polite">
+              <div class="request-progress__track"><span class="request-progress__bar"></span></div>
+              <span id="requestProgressLabel" class="request-progress__label">Working on it...</span>
+            </div>
+            <div class="chat-feed" id="chatFeed">
+              {% if chat_history %}
+                {% for msg in chat_history %}
+                  {% if msg.role == "assistant" %}
+                    <div class="chat-entry">
+                      <div class="chat-bubble assistant" {% if msg.copy_ready %}data-copy="1"{% else %}data-no-copy="1"{% endif %}>{{ msg.content }}</div>
+                      {% if msg.clause_table %}
+                        <div class="analysis-table-wrap" aria-label="Clause analysis table">
+                          <table class="analysis-table">
+                            <thead>
+                              <tr>
+                                <th>Clause</th>
+                                <th>Detected</th>
+                                <th>Primary context (analysis)</th>
+                                <th>GB Ideal Position</th>
+                                <th>Risk</th>
+                                <th>Confidence</th>
+                                <th>Risk Rationale</th>
+                                <th>Mitigation</th>
+                                <th>Approval Path</th>
+                                <th>Evidence</th>
+                                <th title="Uploaded file in which the evidence quote was verified verbatim (primary contract or supporting filename)">Evidence verified in upload</th>
+                                <th>Knowledge Ref</th>
+                                {% if require_redline_hitl and enable_redline_docx_export and redline_table_message_index is not None and forloop.counter0 == redline_table_message_index %}
+                                <th scope="col" title="Included in Download reviewed contract after you save">Body redline</th>
+                                {% endif %}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {% for row in msg.clause_table %}
+                                <tr>
+                                  <td>{{ row.clause_name }}</td>
+                                  <td>{{ row.detected }}</td>
+                                  <td>{{ row.uploaded_position }}</td>
+                                  <td>{{ row.gb_ideal_position }}</td>
+                                  <td>
+                                    {% with risk=row.risk_level|lower %}
+                                      <span
+                                        class="risk-dot {% if risk == 'green' %}green{% elif risk == 'red' %}red{% else %}amber{% endif %}"
+                                        aria-label="Risk {{ row.risk_level }}"
+                                        title="Risk {{ row.risk_level }}"
+                                      ></span>
+                                    {% endwith %}
+                                  </td>
+                                  <td>
+                                    {{ row.confidence_label|default:"-" }}
+                                    {% if row.confidence_score %}
+                                      ({{ row.confidence_score }}%)
+                                    {% endif %}
+                                  </td>
+                                  <td>{{ row.risk_rationale }}</td>
+                                  <td>{{ row.mitigation_recommendation }}</td>
+                                  <td>{{ row.approval_path }}</td>
+                                  <td>{% if row.evidence_quote %}{{ row.evidence_quote }}{% else %}{{ row.evidence_snippet }}{% endif %}</td>
+                                  <td>{{ row.evidence_source|default:"primary" }}{% if row.evidence_location_hint %} — {{ row.evidence_location_hint }}{% endif %}</td>
+                                  <td>{{ row.knowledge_reference }}</td>
+                                  {% if require_redline_hitl and enable_redline_docx_export and redline_table_message_index is not None and forloop.parentloop.counter0 == redline_table_message_index %}
+                                  <td>
+                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.85rem;">
+                                      <input type="checkbox" name="accepted_clause" form="hitl-redline-form" value="{{ forloop.counter }}" {% if forloop.counter in redline_accepted_id_list %}checked{% endif %} title="Apply body redline for this clause on export" />
+                                      Apply
+                                    </label>
+                                  </td>
+                                  {% endif %}
+                                </tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                          {% if msg.analysis_trace and msg.analysis_trace.sources_used %}
+                          <div class="sources-used-strip" style="margin:10px 0;padding:10px;border:1px solid #E5E7EB;border-radius:8px;font-size:.88rem;color:#374151;background:#FAFAFA;">
+                            <strong>Sources used</strong> (verbatim excerpts)
+                            <ul style="margin:8px 0 0 18px;padding:0;">
+                              {% for s in msg.analysis_trace.sources_used %}
+                              <li><span style="color:#64748B;">{{ s.clause }}</span> — <em>{{ s.source }}</em>: {{ s.excerpt }}</li>
+                              {% endfor %}
+                            </ul>
+                          </div>
+                          {% endif %}
+                          {% if require_redline_hitl and enable_redline_docx_export and redline_table_message_index is not None and forloop.counter0 == redline_table_message_index %}
+                          <form id="hitl-redline-form" method="post" action="{% url 'workspace_aerospace_contract_analyzer' %}" style="margin:8px 0;">{% csrf_token %}
+                            <input type="hidden" name="action" value="save_redline_acceptance" />
+                            <p style="margin:0 0 8px;font-size:.85rem;color:#444;">Select clauses for body redlines, then save. <strong>Download reviewed contract</strong> only applies redlines to checked rows.</p>
+                            <button type="submit" class="table-export-btn" title="Store checkbox selection for the next DOCX export">Save redline selection</button>
+                          </form>
+                          {% endif %}
+                          <div class="table-export-row">
+                            <form method="post" class="export-form" action="{% url 'workspace_aerospace_contract_analyzer' %}" data-submit-url="{% url 'workspace_aerospace_contract_analyzer' %}">{% csrf_token %}
+                              <input type="hidden" name="action" value="export_table_csv" />
+                              <button type="submit" class="table-export-btn" title="Export this analysis table as CSV">Export Table CSV</button>
+                            </form>
+                            {% if enable_contract_commentary_docx %}
+                            <form method="post" class="export-form" action="{% url 'workspace_aerospace_contract_analyzer' %}" data-submit-url="{% url 'workspace_aerospace_contract_analyzer' %}">{% csrf_token %}
+                              <input type="hidden" name="action" value="export_contract_commentary_docx" />
+                              <button type="submit" class="table-export-btn" title="Word comments only — no edits to contract body. Same as footer download.">Comments-only DOCX</button>
+                            </form>
+                            {% endif %}
+                          </div>
+                        </div>
+                      {% endif %}
+                      {% if msg.risk_details_markdown %}
+                        <details class="checklist-output" style="margin-top:12px;">
+                          <summary class="checklist-output__title">Risk narrative (Agent 2)</summary>
+                          {{ msg.risk_details_markdown|contract_markdown }}
+                        </details>
+                      {% endif %}
+                      {% if enable_executive_read and msg.executive_read %}
+                        <div class="exec-read" aria-label="Executive read">
+                          <p class="exec-read__title">Executive read (anchored to paragraph ids)</p>
+                          <p class="exec-read__crux">{{ msg.executive_read.contract_crux|default:"" }}</p>
+                          {% if msg.executive_read.executive_items %}
+                          {% for it in msg.executive_read.executive_items %}
+                            <div class="exec-read-item">
+                              <h4>{{ it.clause_name }}</h4>
+                              <dl>
+                                <dt>Risk</dt><dd>{{ it.risk_overview }}</dd>
+                                <dt>Gap vs ideal</dt><dd>{{ it.gap_vs_ideal_position }}</dd>
+                                <dt>Proposal</dt><dd>{{ it.proposal_direction }}</dd>
+                                <dt>Clearance</dt><dd>{{ it.clearance_path }}</dd>
+                                {% if it.cited_paragraph_ids %}
+                                <dt>Cited paragraphs</dt><dd>{{ it.cited_paragraph_ids|join:", " }}</dd>
+                                {% endif %}
+                              </dl>
+                            </div>
+                          {% endfor %}
+                          {% endif %}
+                          {% if msg.executive_read.paragraph_index_fingerprint %}
+                          <p style="margin:8px 0 0;font-size:.78rem;color:#78350F;">Text fingerprint: {{ msg.executive_read.paragraph_index_fingerprint }}</p>
+                          {% endif %}
+                        </div>
+                      {% endif %}
+                      {% if msg.counterfactuals or msg.counterfactual_rows %}
+                        <div class="counterfactuals-output" aria-label="Counterfactuals">
+                          <div class="counterfactuals-output__title">Counterfactuals</div>
+                          {% if msg.counterfactual_rows %}
+                            <table class="counterfactual-table" aria-label="Counterfactual table">
+                              <thead>
+                                <tr>
+                                  <th>Clause</th>
+                                  <th>Current Text</th>
+                                  <th>What-if</th>
+                                  <th>Expected Risk Shift</th>
+                                  <th>Why</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {% for row in msg.counterfactual_rows %}
+                                  <tr>
+                                    <td>{{ row.clause }}</td>
+                                    <td>{{ row.current_text }}</td>
+                                    <td>{{ row.required_change }}</td>
+                                    <td>{{ row.risk_shift }}</td>
+                                    <td>{{ row.reason }}</td>
+                                  </tr>
+                                {% endfor %}
+                              </tbody>
+                            </table>
+                            <div class="table-export-row">
+                              <form method="post" class="export-form" action="{% url 'workspace_aerospace_contract_analyzer' %}" data-submit-url="{% url 'workspace_aerospace_contract_analyzer' %}">{% csrf_token %}
+                                <input type="hidden" name="action" value="export_counterfactuals_csv" />
+                                <button type="submit" class="table-export-btn" title="Export counterfactuals as CSV">Export Counterfactuals CSV</button>
+                              </form>
+                            </div>
+                          {% else %}
+                            <div>{{ msg.counterfactuals|linebreaksbr }}</div>
+                          {% endif %}
+                        </div>
+                      {% endif %}
+                      {% if msg.mitigation_checklist_markdown or msg.mitigation_checklist_rows %}
+                        <details class="checklist-output">
+                          <summary class="checklist-output__title">Mitigation Checklist (Agent 3)</summary>
+                          {% if msg.mitigation_checklist_rows %}
+                            <table class="checklist-table" aria-label="Mitigation checklist table">
+                              <thead>
+                                <tr>
+                                  <th>Clause</th>
+                                  <th>Risk Trigger</th>
+                                  <th>Mitigation Recommendation</th>
+                                  <th>Approval Route</th>
+                                  <th>Priority</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {% for row in msg.mitigation_checklist_rows %}
+                                  <tr>
+                                    <td>{{ row.clause }}</td>
+                                    <td>{{ row.risk_trigger|default:row.risk }}</td>
+                                    <td>{{ row.mitigation }}</td>
+                                    <td>{{ row.approval_path }}</td>
+                                    <td>{{ row.priority }}</td>
+                                  </tr>
+                                {% endfor %}
+                              </tbody>
+                            </table>
+                            <div class="table-export-row">
+<form method="post" class="export-form" action="{% url 'workspace_aerospace_contract_analyzer' %}" data-submit-url="{% url 'workspace_aerospace_contract_analyzer' %}">{% csrf_token %}
+                              <input type="hidden" name="action" value="export_mitigation_checklist_csv" />
+                                <button type="submit" class="table-export-btn" title="Export mitigation checklist as CSV">Export Mitigation Checklist CSV</button>
+                              </form>
+                            </div>
+                          {% else %}
+                            <div class="checklist-empty">{{ msg.mitigation_checklist_markdown|default:"No mitigation checklist available."|linebreaksbr }}</div>
+                          {% endif %}
+                        </details>
+                      {% endif %}
+                      {% if msg.copy_ready %}
+                        <div class="chat-action-bar">
+                          <button type="button" class="copy-btn">Copy</button>
+                        </div>
+                        <textarea class="assistant-raw" hidden readonly>{% autoescape on %}{{ msg.raw|default:msg.content }}{% endautoescape %}</textarea>
+                      {% endif %}
+                    </div>
+                  {% else %}
+                    <div class="chat-entry">
+                      <div class="chat-bubble {{ msg.role }}">{{ msg.content }}</div>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              {% else %}
+                <div class="chat-entry" data-placeholder="1">
+                  <div class="chat-bubble assistant" data-no-copy="1" data-placeholder="1">Upload the **primary agreement** (DOCX/PDF), optionally add **supporting** schedules as read-only context, then tap **Analyze clauses**. Supporting files are never redlined.</div>
+                </div>
+              {% endif %}
+            </div>
+            <button id="jumpToLatest" class="jump-to-latest" type="button" aria-label="Jump to latest">⬇ Jump to latest</button>
+
+            <div class="chat-footer">
+              <div class="files-row" id="filesRow">
+                {% if uploaded_files %}
+                  {% for f in uploaded_files %}
+                    <div class="uploaded-chip">
+                      {% if f.role == "contract" %}<strong>Contract</strong>{% elif f.role == "supporting" %}<strong>Support</strong>{% endif %}
+                      <span title="{{ f.name }}">{{ f.name }}</span>
+                      <form method="post" class="file-remove-form" action="{% url 'workspace_aerospace_contract_analyzer' %}">{% csrf_token %}
+                        <input type="hidden" name="action" value="remove_file" />
+                        <input type="hidden" name="filename" value="{{ f.name }}" />
+                        <button type="submit" title="Remove {{ f.name }}">✕</button>
+                      </form>
+                    </div>
+                  {% endfor %}
+                {% else %}
+                  <div class="files-empty">Drag &amp; drop files or use + to upload.</div>
+                {% endif %}
+              </div>
+              <div class="input-bar">
+                <form id="contractUploadForm" class="upload-form contract-upload" method="post" enctype="multipart/form-data" action="{% url 'workspace_aerospace_contract_analyzer' %}">{% csrf_token %}
+                  <input type="hidden" name="action" value="upload" />
+                  <input type="hidden" name="upload_role" value="contract" />
+                  <label for="contractUploadFiles" title="Primary agreement (analysis and future comment export)">Primary agreement</label>
+                  <input id="contractUploadFiles" class="upload-input" type="file" name="files" accept=".pdf,.docx,.doc,.txt" />
+                </form>
+                <form id="supportingUploadForm" class="upload-form supporting-upload" method="post" enctype="multipart/form-data" action="{% url 'workspace_aerospace_contract_analyzer' %}">{% csrf_token %}
+                  <input type="hidden" name="action" value="upload" />
+                  <input type="hidden" name="upload_role" value="supporting" />
+                  <label for="supportingUploadFiles" title="Reference only — used for detection context">Supporting docs</label>
+                  <input id="supportingUploadFiles" class="upload-input" type="file" name="files" accept=".pdf,.docx,.doc,.txt,.xlsx,.csv" multiple />
+                </form>
+                {% if enable_async_contract_analysis %}
+                <form id="analyzeClausesForm" method="post" action="{% url 'workspace_aerospace_contract_analyzer' %}">{% csrf_token %}
+                  <input type="hidden" name="action" value="analyze_clauses_async" />
+                  <button type="button" id="analyzeClausesAsyncBtn" class="export-btn" style="min-width:160px;font-weight:600;" title="Background job via Celery (polls job status). Requires Redis + worker unless CELERY_TASK_ALWAYS_EAGER=1.">Analyze clauses</button>
+                </form>
+                {% else %}
+                <form method="post" action="{% url 'workspace_aerospace_contract_analyzer' %}">{% csrf_token %}
+                  <input type="hidden" name="action" value="analyze_clauses" />
+                  <button type="submit" class="export-btn" style="min-width:160px;font-weight:600;" title="Run clause analysis in the web process (may take a minute with semantic redlines)">Analyze clauses</button>
+                </form>
+                {% endif %}
+                {% if enable_redline_docx_export %}
+                <form method="post" class="export-form" action="{% url 'workspace_aerospace_contract_analyzer' %}" data-submit-url="{% url 'workspace_aerospace_contract_analyzer' %}">{% csrf_token %}
+                  <input type="hidden" name="action" value="export_reviewed_docx" />
+                  <button type="submit" class="export-btn" title="{% if require_redline_hitl %}DOCX body redlines use clause rows you checked and saved in the analysis table.{% else %}Download redlined primary contract (DOCX){% endif %}" {% if not has_clause_analysis %}disabled aria-disabled="true"{% endif %}>Download reviewed contract</button>
+                </form>
+                <form method="post" class="export-form" action="{% url 'workspace_aerospace_contract_analyzer' %}" data-submit-url="{% url 'workspace_aerospace_contract_analyzer' %}">{% csrf_token %}
+                  <input type="hidden" name="action" value="export_verification_report_csv" />
+                  <button type="submit" class="table-export-btn" title="Agent 4 verification (after reviewed DOCX)" {% if not has_clause_analysis %}disabled aria-disabled="true"{% endif %}>Verification CSV</button>
+                </form>
+                {% endif %}
+                {% if enable_contract_commentary_docx %}
+                <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;max-width:min(520px,100%);">
+                  {% if has_clause_analysis %}
+                  <a class="export-btn" style="display:inline-flex;align-items:center;text-decoration:none;padding:0 14px;height:46px;border-radius:12px;font-size:.9rem;font-weight:600;border:1px solid #1e3a5f;background:#1d4ed8;color:#fff;" href="{% url 'download_contract_commentary_docx' %}" title="Regenerates from latest analysis">Download contract + review comments (DOCX)</a>
+                  {% else %}
+                  <span class="table-export-btn" style="opacity:.55;cursor:not-allowed;height:auto;padding:8px 12px;">Download contract + review comments — run <strong>Analyze clauses</strong> first</span>
+                  {% endif %}
+                  <p style="margin:0;font-size:.78rem;line-height:1.45;color:#475467;">
+                    <strong>Comments only</strong> — the contract body is unchanged (no strike/underline). Each Word comment summarizes: clause theme, contract evidence, uploaded vs GB ideal, risk rationale, a <em>supporting-schedule</em> excerpt when relevant, mitigation/clearance, and negotiation notes. Complex two-column or table layouts can shift where Word anchors comments; review in Print Layout.
+                  </p>
+                </div>
+                {% endif %}
+                <form method="post" action="{% url 'workspace_aerospace_contract_analyzer' %}">{% csrf_token %}
+                  <input type="hidden" name="action" value="reset" />
+                  <button type="submit" class="table-export-btn" style="border-color:#CBD5E1;background:#F9FAFB;color:#374151;" title="Clear uploads and analysis">Clear session</button>
+                </form>
+                <div id="chatLoading" class="chat-loading" aria-live="polite">
+                  <span class="chat-loading__dot"></span><span class="chat-loading__dot"></span><span class="chat-loading__dot"></span>
+                  <span class="chat-loading__label">Working…</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{ enable_async_contract_analysis|json_script:"contract-analyzer-async-enabled" }}
+<script src="{% static 'guru/js/workspace_sample_agent.js' %}"></script>
+{% endblock %}
